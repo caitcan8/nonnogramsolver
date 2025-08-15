@@ -2,7 +2,7 @@
 string filename;
 void printHelp(char *command) {
     cout << "Usage: " << command << " \n";
-    cout << "This program is used to assist in solving a wordle";
+    cout << "This program is used to assist in solving a nonnogram. A nonnogram is a puzzle where you must fill cells based on the clues for rows and columns with a single cell gap in between in clue";
 }  // printHelp()
 
 void getOptions(int argc, char **argv) {

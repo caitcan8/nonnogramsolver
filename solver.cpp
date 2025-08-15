@@ -141,12 +141,136 @@ vector<vector<int>>  Solver::totalrowsolutions(vector<int>& clues){
 void Solver::solve(){
     read(); //read in data
     //make a grid of all possible row solutions
-    vector<vector<vector<int>>> grid;
+    
     for(size_t i = 0; i < dimensions; ++i){
         vector<int> clues(rowclues[i].begin(), rowclues[i].end());
         //add to grid
         grid.push_back(totalrowsolutions(clues));
     }
-    
 
+    //start at row 0
+    //rowsolve(0);
+    if (rowsolve(0)) {
+        cout << "Solution found:\n";
+        print();
+    } else {
+        cout << "No solution exists.\n";
+    }
+
+}
+
+bool Solver::partcolcheck(size_t colnum, size_t torow){
+    // size_t currpos = 0;
+    // for(size_t i = 0; i < colclues[colnum].size(); ++i){
+    //     size_t count = 0;
+    //     for(int j = 0; j < int(colclues[colnum][i]); ++j){
+    //         if(currpos > torow) return true;
+
+    //         if(puzzle[currpos][colnum] == 1){
+    //             ++count;
+    //             ++currpos;
+    //         } else {
+    //             j = -1;
+    //             count = 0;
+    //             ++currpos;
+    //             if(currpos > torow) return true;
+    //         }
+    //     }
+    //     if(currpos <= torow && count != colclues[colnum][i] && puzzle[currpos][colnum] != 0){
+    //         return false;
+    //     }
+    //     ++currpos;
+    // }
+    // for(size_t r = currpos; r <= torow; ++r){
+    //     if(puzzle[r][colnum] == 1) return false;
+    // }
+    // return true;
+
+
+
+    const auto& clues = colclues[colnum];
+    size_t clueindex = 0;   // which clue we're matching
+    size_t currlen  = 0;   // length of current contiguous 1-run
+
+    // Scan rows 0..torow in this column
+    for (size_t r = 0; r <= torow; ++r) { //loop all rows to the row number given
+        int curr = puzzle[r][colnum]; 
+
+        if (curr == 1) {
+            //if its filled add to the current length
+            // No extra blocks beyond number of clues
+            if (clueindex >= clues.size()) return false;
+
+            ++currlen;
+
+            //cant be longer than clue length
+            if (currlen > clues[clueindex]) return false;
+        } else { // cell == 0 closes any open run
+            if (currlen > 0) {
+                // CLOSED run inside observed rows must match exactly
+                if (clues.empty() || clueindex >= clues.size()) return false; //doesnt match exactly 
+                if (currlen != clues[clueindex]) return false; //if its not filled and not the correct length then it isnt right 
+
+                //next clue so increment 
+                ++clueindex;
+                currlen = 0;
+            }
+        }
+    }
+
+    
+    if (torow < dimensions - 1) {
+        return true;
+    }
+
+    // Final row: require exact match.
+    if (currlen > 0) {
+        // curr clue
+        if (clueindex >= clues.size() || currlen != clues[clueindex]) return false; 
+        ++clueindex;
+        currlen = 0;
+    }
+
+    //must have solved all clues 
+    return (clueindex == clues.size());
+}
+
+bool Solver::rowsolve(size_t rownum){
+    //try each pattern for the row
+    //put pattern into puzzle
+    //use colcheckpartial to verify or prune
+    //if valid, move to next row (recursive)
+    //if row == dimensions then ur done 
+    //if no pattern works backtrack
+
+
+
+    //base case
+     if (rownum == dimensions) {
+        // check all columns up to final row 
+        for (size_t col = 0; col < dimensions; ++col) {
+            if (!partcolcheck(col, dimensions - 1)) return false;
+        }
+        return true;
+    }
+
+    // final row patterns 
+    for (const auto &pattern : grid[rownum]) {
+        puzzle[rownum] = pattern;
+
+        // check columns 
+        bool valid = true;
+        for (size_t col = 0; col < dimensions; ++col) {
+            if (!partcolcheck(col, rownum)) {
+                valid = false;
+                break;
+            }
+        }
+
+        if (valid && rowsolve(rownum + 1)) {
+            return true; // theres a solution 
+        }
+    }
+
+    return false; //no solution, this is where backtracking would occur from the recursion 
 }
